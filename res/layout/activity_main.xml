@@ -13,6 +13,7 @@
         android:layout_height="100dp"
         android:text="@string/hello_world" 
         android:background="#FFFACD"
+        android:minHeight="100dp"
         android:clickable="true"/>
 
 </RelativeLayout>
