@@ -11,11 +11,11 @@ import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.ViewParent;
 import android.widget.Toast;
 
 /**
  * @author wan
- *
  */
 public class StretchableListener implements OnTouchListener {
 	public static final int TOP = 1;
@@ -35,35 +35,20 @@ public class StretchableListener implements OnTouchListener {
 	private boolean onBottom;
 	private boolean onRight;
 	private final Context c;
-	private int w;
-	private int h;
 	private int sx;
 	private int sy;
+	private int w;
+	private int h;
 	private int lx;
 	private int ly;
 	private int xb = 0;//移动缓存，进行不可以的移动时，保存过度的移动，反向移动时用来抵消。
 	private int yb = 0;
 
-	public StretchableListener(Context c) {
-		this(c, ALL);
-	}
 	
-	public StretchableListener(Context c, int mode) {
-		this(c, 0, 0, mode);
-		DisplayMetrics dm = c.getResources().getDisplayMetrics();
-		this.w = dm.widthPixels;
-		this.h = dm.heightPixels;
+	public StretchableListener(Context c, int startX, int startY, int screenWidth, int screenHeight) {
+		this(c, startX, startY, screenWidth, screenHeight, ALL);
 	}
-
-	public StretchableListener(Context c, int screenWidth, int screenHeight) {
-		this(c, screenWidth, screenHeight, ALL);
-	}
-	
-	public StretchableListener(Context c, int screenWidth, int screenHeight, int mode) {
-		this(c, screenWidth, screenHeight, 0, 0, mode);
-	}
-
-	public StretchableListener(Context c, int screenWidth, int screenHeight, int startX, int startY, int mode) {
+	public StretchableListener(Context c, int startX, int startY, int screenWidth, int screenHeight, int mode) {
 		this.c = c;
 		w = screenWidth;
 		h = screenHeight;
@@ -79,6 +64,30 @@ public class StretchableListener implements OnTouchListener {
 			rightS = true;
 	}
 
+	private float top = 0;
+	private float left = 0;
+	private boolean firstTop = true;
+	private boolean firstLeft = true;
+	private int getX(View v, MotionEvent event) {
+		if (firstLeft) {
+			left = event.getRawX() - event.getX() - v.getLeft();
+			firstLeft = false;
+		}
+		int lx = (int)(event.getRawX() - left);
+		if (lx < sx) lx = sx;
+		else if(lx > w) lx = w;
+		return  lx;
+	}
+	private int getY(View v, MotionEvent event) {
+		if (firstTop) {
+			top = event.getRawY() - event.getY() - v.getTop();
+			firstTop = false;
+		}
+		int ly = (int)(event.getRawY() - top);
+		if (ly < sy) ly = sy;
+		else if(ly > h) ly = h;
+		return  ly;
+	}
 	private Timer timer = new Timer();
 	private boolean first = true;
 	private boolean continue_ = false;
@@ -106,8 +115,8 @@ public class StretchableListener implements OnTouchListener {
 			return false;
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
-			lx = (int) event.getRawX();
-			ly = (int) event.getRawY();
+			lx = getX(v, event);
+			ly = getY(v, event);
 			int x = (int)event.getX();
 			int y = (int)event.getY();
 			if (y < v.getHeight() / 5)
@@ -127,7 +136,9 @@ public class StretchableListener implements OnTouchListener {
 			}, 250);
 			break;
 		case MotionEvent.ACTION_MOVE:
-			int dx = (int) event.getRawX() - lx;
+			
+			int cx = getX(v, event);
+			int dx = cx - lx;
 			if (xb > 0 && dx > 0) {
 				if (xb > dx) {
 					xb -= dx;
@@ -148,7 +159,8 @@ public class StretchableListener implements OnTouchListener {
 					xb = 0;
 				}
 			}
-			int dy = (int) event.getRawY() - ly;
+			int cy = getY(v, event);
+			int dy = cy - ly;
 			if (yb > 0 && dy > 0) {
 				if (yb > dy) {
 					yb -= dy;
@@ -223,25 +235,23 @@ public class StretchableListener implements OnTouchListener {
 				right +=  dx;
 			}
 			
-			int width = right - left;
 			if (left < sx) {
 				left = sx;
-				right = left + width;
+				right = left + v.getWidth();
 			} else if (right > w) {
 				right = w;
-				left = right - width;
+				left = right - v.getWidth();
 			}
-			int height = bottom - top;
 			if (top < sy) {
 				top = sy;
-				bottom = top + height;
+				bottom = top + v.getHeight();
 			} else if (bottom > h) {
 				bottom = h;
-				top = bottom - height;
+				top = bottom - v.getHeight();
 			}
 			v.layout(left, top, right, bottom);
-			lx = (int) event.getRawX();
-			ly = (int) event.getRawY();
+			lx = getX(v, event);
+			ly = getY(v, event);
 			break;
 		case MotionEvent.ACTION_UP:
 			if (dbclick)
