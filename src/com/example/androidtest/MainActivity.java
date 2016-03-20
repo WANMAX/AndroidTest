@@ -4,6 +4,11 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.TextView;
+import android.widget.Toast;
+import stretchable.StretchableListener;
 
 public class MainActivity extends Activity {
 
@@ -11,6 +16,13 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		TextView helloT = (TextView) findViewById(R.id.hello);
+		helloT.setOnTouchListener(new StretchableListener(this) {
+			@Override
+			public void onClick(View v, MotionEvent event) {
+				Toast.makeText(MainActivity.this, "just fo test", Toast.LENGTH_SHORT).show();
+			}
+		});
 	}
 
 	@Override
